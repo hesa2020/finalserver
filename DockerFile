@@ -1,0 +1,52 @@
+FROM library/php:7.4.4-apache
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update && apt-get install -y \
+    libmemcached-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    git \
+    curl \
+	&& docker-php-ext-configure gd --with-freetype --with-jpeg \
+	&& docker-php-ext-install -j$(nproc) gd
+
+RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+
+# mcrypt
+RUN apt-get update -y && \
+    apt-get install -y libmcrypt-dev && \
+    pecl install mcrypt-1.0.3 && \
+    docker-php-ext-enable mcrypt
+
+# Install Memcached extension
+RUN git clone -b master https://github.com/php-memcached-dev/php-memcached /usr/src/php/ext/memcached \
+    && docker-php-ext-configure /usr/src/php/ext/memcached \
+        --disable-memcached-sasl \
+    && docker-php-ext-install /usr/src/php/ext/memcached \
+    && rm -rf /usr/src/php/ext/memcached
+
+# Install APCu and APC backward compatibility
+RUN pecl install apcu \
+    && pecl install apcu_bc-1.0.3 \
+    && docker-php-ext-enable apcu --ini-name 10-docker-php-ext-apcu.ini \
+    && docker-php-ext-enable apc --ini-name 20-docker-php-ext-apc.ini
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin \
+    --filename=composer
+
+RUN a2enmod rewrite
+RUN a2enmod expires
+
+# Download wkhtmltopdf and dependencies
+RUN sed 's/main$/main universe/' -i /etc/apt/sources.list
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential xorg libssl-dev libxrender-dev wget gdebi libpng16-16 xfonts-75dpi
+#RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.bionic_amd64.deb
+RUN apt install wkhtmltopdf -y
+
+CMD ["apachectl", "-D", "FOREGROUND"]
