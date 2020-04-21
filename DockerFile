@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 
 # Ldap
-RUN apt-get install -y libldap2-dev && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && docker-php-ext-install ldap
+RUN apt-get install -y libldap2-dev && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && docker-php-ext-install ldap && apt-get purge -y --auto-remove libldap2-dev
 
 # mcrypt
 RUN apt-get update -y && \
@@ -28,7 +28,8 @@ RUN apt-get update -y && \
 RUN git clone -b master https://github.com/php-memcached-dev/php-memcached /usr/src/php/ext/memcached \
     && docker-php-ext-configure /usr/src/php/ext/memcached \
         --disable-memcached-sasl \
-    && docker-php-ext-install /usr/src/php/ext/memcached
+    && docker-php-ext-install /usr/src/php/ext/memcached \
+    && rm -rf /usr/src/php/ext/memcached
 
 # Install APCu and APC backward compatibility
 RUN pecl install apcu \
