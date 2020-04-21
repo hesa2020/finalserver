@@ -12,7 +12,11 @@ RUN apt-get update && apt-get install -y \
 	&& docker-php-ext-configure gd --with-freetype --with-jpeg \
 	&& docker-php-ext-install -j$(nproc) gd
 
+# Mysqli
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+
+# Ldap
+RUN docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && docker-php-ext-install ldap
 
 # mcrypt
 RUN apt-get update -y && \
