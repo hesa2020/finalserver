@@ -7,10 +7,13 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
+    libzip-dev \
     git \
     curl \
+    zip \
 	&& docker-php-ext-configure gd --with-freetype --with-jpeg \
-	&& docker-php-ext-install -j$(nproc) gd
+	&& docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-install zip
 
 # Mysqli
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
@@ -23,6 +26,11 @@ RUN apt-get update -y && \
     apt-get install -y libmcrypt-dev && \
     pecl install mcrypt-1.0.3 && \
     docker-php-ext-enable mcrypt
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin \
+    --filename=composer
 
 # Install Memcached extension
 RUN git clone -b master https://github.com/php-memcached-dev/php-memcached /usr/src/php/ext/memcached \
@@ -37,13 +45,17 @@ RUN pecl install apcu \
     && docker-php-ext-enable apcu --ini-name 10-docker-php-ext-apcu.ini \
     && docker-php-ext-enable apc --ini-name 20-docker-php-ext-apc.ini
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- \
-    --install-dir=/usr/local/bin \
-    --filename=composer
 
 RUN a2enmod rewrite
 RUN a2enmod expires
+
+# Install microsoft fonts
+RUN echo "deb http://http.debian.net/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
+    apt-get update && \
+    apt install fontconfig -y && \
+    echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
+    apt install ttf-mscorefonts-installer -y && \
+    fc-cache -f
 
 # Download wkhtmltopdf and dependencies
 RUN sed 's/main$/main universe/' -i /etc/apt/sources.list
@@ -52,5 +64,10 @@ RUN apt-get upgrade -y
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential xorg libssl-dev libxrender-dev wget gdebi libpng16-16 xfonts-75dpi
 #RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.bionic_amd64.deb
 RUN apt install wkhtmltopdf -y
+
+# Install GIT
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y git
 
 CMD ["apachectl", "-D", "FOREGROUND"]
