@@ -49,25 +49,26 @@ RUN pecl install apcu \
 RUN a2enmod rewrite
 RUN a2enmod expires
 
+#required repositories for microsoft fonts and wkhtmltopdf
+RUN sed 's/main$/main non-free contrib deb-src universe/' -i /etc/apt/sources.list
+RUN apt-get update -y
+RUN apt-get upgrade -y
+
 # Install microsoft fonts
-RUN echo "deb http://http.debian.net/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
-    apt-get update && \
-    apt install fontconfig -y && \
-    echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections && \
-    apt install ttf-mscorefonts-installer -y && \
+RUN apt install fontconfig -y && \
+    apt install msttcorefonts -y && \
     fc-cache -f
 
 # Download wkhtmltopdf and dependencies
-RUN sed 's/main$/main universe/' -i /etc/apt/sources.list
-RUN apt-get update -y
-RUN apt-get upgrade -y
+RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential xorg libssl-dev libxrender-dev wget gdebi libpng16-16 xfonts-75dpi
-#RUN wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.bionic_amd64.deb
 RUN apt install wkhtmltopdf -y
 
 # Install GIT
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y git
+RUN apt-get install -y git
+
+#optional run composer on start.
+#COPY ./ /var/www/html/
+#RUN cd /var/www/html && composer install
 
 CMD ["apachectl", "-D", "FOREGROUND"]
