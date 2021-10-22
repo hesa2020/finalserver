@@ -73,9 +73,7 @@ RUN apt install wkhtmltopdf -y
 RUN apt-get install -y git
 
 #optional run composer on start.
-#COPY ./ /var/www/html/
-#RUN cd /var/www/html && composer install
-COPY composer.* ./
-RUN composer install
+COPY ./ /var/www/html/
+RUN cd /var/www/html && composer install
 
 CMD ["apachectl", "-D", "FOREGROUND"]
