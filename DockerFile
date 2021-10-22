@@ -45,6 +45,11 @@ RUN pecl install apcu \
     && docker-php-ext-enable apcu --ini-name 10-docker-php-ext-apcu.ini \
     && docker-php-ext-enable apc --ini-name 20-docker-php-ext-apc.ini
 
+# Imagick
+RUN apt-get update && apt-get install -y \
+    libmagickwand-dev --no-install-recommends \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick
 
 RUN a2enmod rewrite
 RUN a2enmod expires
@@ -70,5 +75,7 @@ RUN apt-get install -y git
 #optional run composer on start.
 #COPY ./ /var/www/html/
 #RUN cd /var/www/html && composer install
+COPY composer.* ./
+RUN composer install
 
 CMD ["apachectl", "-D", "FOREGROUND"]
